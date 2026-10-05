@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AdPilot business profiles, saved campaigns, and rule-based Dummy campaign drafting.
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: adpilot
+    description: Business profile, campaigns, and Dummy campaign drafting
 paths:
   /healthz:
     get:
@@ -24,6 +26,164 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /profile/me:
+    get:
+      operationId: getBusinessProfile
+      tags: [adpilot]
+      summary: Get the signed-in user's business profile
+      responses:
+        "200":
+          description: Business profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessProfile"
+    put:
+      operationId: saveBusinessProfile
+      tags: [adpilot]
+      summary: Save the signed-in user's business profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessProfileInput"
+      responses:
+        "200":
+          description: Saved business profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessProfile"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [adpilot]
+      summary: Get a campaign overview for the signed-in user
+      responses:
+        "200":
+          description: Campaign overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /ideas:
+    post:
+      operationId: generateCampaignIdeas
+      tags: [adpilot]
+      summary: Draft three transparent, rule-based campaign concepts
+      description: Uses only user-provided business text and media descriptions. This is not an AI model and does not inspect file contents.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignIdeasInput"
+      responses:
+        "200":
+          description: Three starter concepts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignIdeasResponse"
+  /ideas/revise:
+    post:
+      operationId: reviseCampaignIdea
+      tags: [adpilot]
+      summary: Revise a concept with a rule-based writing direction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignIdeaRevisionInput"
+      responses:
+        "200":
+          description: Revised starter concept
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignConcept"
+  /campaigns:
+    get:
+      operationId: listCampaigns
+      tags: [adpilot]
+      summary: List the signed-in user's campaigns
+      responses:
+        "200":
+          description: Campaigns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Campaign"
+    post:
+      operationId: createCampaign
+      tags: [adpilot]
+      summary: Save a campaign draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignInput"
+      responses:
+        "201":
+          description: Saved campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+  /campaigns/{campaignId}:
+    parameters:
+      - name: campaignId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getCampaign
+      tags: [adpilot]
+      summary: Get one saved campaign
+      responses:
+        "200":
+          description: Campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "404":
+          description: Campaign not found
+    patch:
+      operationId: updateCampaign
+      tags: [adpilot]
+      summary: Update a saved campaign draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignUpdate"
+      responses:
+        "200":
+          description: Updated campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "404":
+          description: Campaign not found
+    delete:
+      operationId: deleteCampaign
+      tags: [adpilot]
+      summary: Delete a saved campaign draft
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Campaign not found
 components:
   schemas:
     HealthStatus:
@@ -33,4 +193,228 @@ components:
           type: string
       required:
         - status
+    CampaignObjective:
+      type: string
+      enum: [enquiries, sales, website_visits, awareness]
+    CampaignPlatform:
+      type: string
+      enum: [google, meta, tiktok]
+    CampaignStatus:
+      type: string
+      enum: [draft, ready_for_review]
+    CampaignConcept:
+      type: object
+      properties:
+        angle:
+          type: string
+        headline:
+          type: string
+        primaryCopy:
+          type: string
+        callToAction:
+          type: string
+        mediaDescription:
+          type: ["string", "null"]
+        storyboard:
+          type: ["string", "null"]
+        platform:
+          $ref: "#/components/schemas/CampaignPlatform"
+        audience:
+          type: string
+        explanation:
+          type: string
+      required: [angle, headline, primaryCopy, callToAction, mediaDescription, storyboard, platform, audience, explanation]
+    BusinessProfile:
+      type: object
+      properties:
+        businessName: { type: string }
+        businessDescription: { type: string }
+        productsServices: { type: string }
+        websiteUrl: { type: ["string", "null"] }
+        businessLocation: { type: string }
+        advertisingLocations:
+          type: array
+          items: { type: string }
+        targetAudience: { type: string }
+        language: { type: string }
+        objective: { $ref: "#/components/schemas/CampaignObjective" }
+        brandColors:
+          type: array
+          items: { type: string }
+        preferredTone: { type: string }
+        currency: { type: string }
+        timeZone: { type: string }
+        dailyBudget: { type: ["number", "null"] }
+        totalBudget: { type: ["number", "null"] }
+        startDate: { type: ["string", "null"], format: date }
+        endDate: { type: ["string", "null"], format: date }
+        updatedAt: { type: string, format: date-time }
+      required:
+        - businessName
+        - businessDescription
+        - productsServices
+        - websiteUrl
+        - businessLocation
+        - advertisingLocations
+        - targetAudience
+        - language
+        - objective
+        - brandColors
+        - preferredTone
+        - currency
+        - timeZone
+        - dailyBudget
+        - totalBudget
+        - startDate
+        - endDate
+        - updatedAt
+    BusinessProfileInput:
+      type: object
+      properties:
+        businessName: { type: string, maxLength: 160 }
+        businessDescription: { type: string, maxLength: 2000 }
+        productsServices: { type: string, maxLength: 2000 }
+        websiteUrl: { type: ["string", "null"], maxLength: 2048 }
+        businessLocation: { type: string, maxLength: 200 }
+        advertisingLocations:
+          type: array
+          items: { type: string, maxLength: 200 }
+          maxItems: 30
+        targetAudience: { type: string, maxLength: 1000 }
+        language: { type: string, maxLength: 80 }
+        objective: { $ref: "#/components/schemas/CampaignObjective" }
+        brandColors:
+          type: array
+          items: { type: string, maxLength: 20 }
+          maxItems: 12
+        preferredTone: { type: string, maxLength: 160 }
+        currency: { type: string, maxLength: 8 }
+        timeZone: { type: string, maxLength: 80 }
+        dailyBudget: { type: ["number", "null"], minimum: 0 }
+        totalBudget: { type: ["number", "null"], minimum: 0 }
+        startDate: { type: ["string", "null"], format: date }
+        endDate: { type: ["string", "null"], format: date }
+      required:
+        - businessName
+        - businessDescription
+        - productsServices
+        - websiteUrl
+        - businessLocation
+        - advertisingLocations
+        - targetAudience
+        - language
+        - objective
+        - brandColors
+        - preferredTone
+        - currency
+        - timeZone
+        - dailyBudget
+        - totalBudget
+        - startDate
+        - endDate
+    CampaignIdeasInput:
+      type: object
+      properties:
+        businessName: { type: string, maxLength: 160 }
+        businessDescription: { type: string, maxLength: 2000 }
+        productsServices: { type: string, maxLength: 2000 }
+        targetAudience: { type: string, maxLength: 1000 }
+        language: { type: string, maxLength: 80 }
+        objective: { $ref: "#/components/schemas/CampaignObjective" }
+        preferredTone: { type: string, maxLength: 160 }
+        platforms:
+          type: array
+          items:
+            $ref: "#/components/schemas/CampaignPlatform"
+          minItems: 1
+          maxItems: 3
+        mediaDescriptions:
+          type: array
+          items: { type: string, maxLength: 400 }
+          maxItems: 20
+      required: [businessName, businessDescription, productsServices, targetAudience, language, objective, preferredTone, platforms, mediaDescriptions]
+    CampaignIdeasResponse:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum: [rule_based]
+        notice: { type: string }
+        concepts:
+          type: array
+          items:
+            $ref: "#/components/schemas/CampaignConcept"
+          minItems: 3
+          maxItems: 3
+      required: [mode, notice, concepts]
+    CampaignIdeaRevisionInput:
+      type: object
+      properties:
+        concept: { $ref: "#/components/schemas/CampaignConcept" }
+        direction:
+          type: string
+          enum: [shorter, warmer, clearer, different_angle]
+        businessName: { type: string, maxLength: 160 }
+        productsServices: { type: string, maxLength: 2000 }
+      required: [concept, direction, businessName, productsServices]
+    CampaignInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 180 }
+        objective: { $ref: "#/components/schemas/CampaignObjective" }
+        platforms:
+          type: array
+          items: { $ref: "#/components/schemas/CampaignPlatform" }
+          minItems: 1
+          maxItems: 3
+        budget: { type: ["number", "null"], minimum: 0 }
+        currency: { type: string, maxLength: 8 }
+        startDate: { type: ["string", "null"], format: date }
+        endDate: { type: ["string", "null"], format: date }
+        concepts:
+          type: array
+          items: { $ref: "#/components/schemas/CampaignConcept" }
+          minItems: 3
+          maxItems: 3
+        status: { $ref: "#/components/schemas/CampaignStatus" }
+      required: [name, objective, platforms, budget, currency, startDate, endDate, concepts, status]
+    CampaignUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 180 }
+        objective: { $ref: "#/components/schemas/CampaignObjective" }
+        platforms:
+          type: array
+          items: { $ref: "#/components/schemas/CampaignPlatform" }
+          minItems: 1
+          maxItems: 3
+        budget: { type: ["number", "null"], minimum: 0 }
+        currency: { type: string, maxLength: 8 }
+        startDate: { type: ["string", "null"], format: date }
+        endDate: { type: ["string", "null"], format: date }
+        concepts:
+          type: array
+          items: { $ref: "#/components/schemas/CampaignConcept" }
+          minItems: 3
+          maxItems: 3
+        status: { $ref: "#/components/schemas/CampaignStatus" }
+    Campaign:
+      allOf:
+        - $ref: "#/components/schemas/CampaignInput"
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+          required: [id, createdAt, updatedAt]
+    DashboardSummary:
+      type: object
+      properties:
+        campaignCount: { type: integer }
+        draftCount: { type: integer }
+        reviewCount: { type: integer }
+        recentCampaigns:
+          type: array
+          items: { $ref: "#/components/schemas/Campaign" }
+      required: [campaignCount, draftCount, reviewCount, recentCampaigns]
 

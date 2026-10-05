@@ -1,0 +1,1 @@
+- [Nigeria-first defaults](nigeria-first-defaults.md) — AdPilot profile and campaign defaults should use NGN and Africa/Lagos.
