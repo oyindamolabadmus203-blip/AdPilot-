@@ -12,7 +12,8 @@ import { DummyAssetProvider, Workspace, Landing } from '@/pages/app-pages';
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+const staticWebOnly = import.meta.env.VITE_STATIC_WEB_ONLY === 'true';
+const clerkPubKey = staticWebOnly ? '' : publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 
 function stripBase(path: string) {
@@ -138,6 +139,7 @@ function ClerkRoutes() {
 }
 
 function App() {
+  if (staticWebOnly) return <WouterRouter base={basePath}><Landing staticMode /></WouterRouter>;
   if (!clerkPubKey) throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
   return <WouterRouter base={basePath}><ClerkRoutes /></WouterRouter>;
 }

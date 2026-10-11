@@ -1,1 +1,3 @@
 - [Nigeria-first defaults](nigeria-first-defaults.md) — AdPilot profile and campaign defaults should use NGN and Africa/Lagos.
+- [Netlify initial mode](netlify-static-preview.md) — Netlify should serve only the public landing page until the backend is connected later.
+- [GitHub source control](github-source-control.md) — Verify shell authentication before claiming a GitHub push; reconnect through Replit when CLI credentials are absent.

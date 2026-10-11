@@ -1,0 +1,14 @@
+[build]
+command = "pnpm --filter @workspace/adpilot run build"
+publish = "artifacts/adpilot/dist/public"
+
+[build.environment]
+BASE_PATH = "/"
+NODE_VERSION = "22"
+PORT = "8888"
+VITE_STATIC_WEB_ONLY = "true"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
